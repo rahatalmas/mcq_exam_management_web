@@ -1,0 +1,733 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>MCQ Generator — Academic Edition</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { 
+      font-family: 'Poppins', system-ui;
+      min-height: 100vh;
+    }
+
+    @media print {
+      body { margin: 0; padding: 0; }
+      .no-print { display: none !important; }
+    }
+
+    .pdf-wrapper {
+      width: 210mm;
+      margin: 0 auto;
+    }
+
+    .pdf-page {
+      width: 210mm;
+      height: 297mm;
+      padding: 12mm;
+      background: white;
+      page-break-after: always;
+      display: flex;
+      flex-direction: column;
+      font-size: 11px;
+    }
+
+    .pdf-header {
+      padding-bottom: 6mm;
+      margin-bottom: 6mm;
+      border-bottom: 2px solid #667eea;
+      flex-shrink: 0;
+    }
+
+    .exam-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 2mm;
+      color: #667eea;
+    }
+
+    .exam-info {
+      font-size: 10px;
+      line-height: 1.4;
+      margin-bottom: 2mm;
+      color: #333;
+    }
+
+    .exam-instructions {
+      font-size: 9px;
+      line-height: 1.3;
+      color: #666;
+      margin-top: 2mm;
+      font-style: italic;
+    }
+
+    .pdf-content {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8mm;
+      overflow: hidden;
+    }
+
+    .pdf-col {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      overflow: hidden;
+    }
+
+    .q-item {
+      margin-bottom: 1.8mm;
+      padding-bottom: 1.2mm;
+      border-bottom: 1px solid #e0e0e0;
+      page-break-inside: avoid;
+      font-size: 10px;
+    }
+
+    .q-title {
+      font-weight: 600;
+      margin-bottom: 0.6mm;
+      line-height: 1.2;
+      color: #222;
+    }
+
+    .q-opts {
+      font-size: 9px;
+      line-height: 1.25;
+      color: #555;
+    }
+
+    .opt {
+      margin-bottom: 0.3mm;
+    }
+
+    .pdf-footer {
+      text-align: center;
+      font-size: 8px;
+      color: #999;
+      margin-top: 4mm;
+      padding-top: 3mm;
+      border-top: 1px solid #ddd;
+      flex-shrink: 0;
+    }
+
+    .left-panel {
+      max-height: calc(100vh - 60px);
+      overflow-y: auto;
+    }
+
+    .left-panel::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .left-panel::-webkit-scrollbar-track {
+      background: rgba(255,255,255,0.1);
+    }
+
+    .left-panel::-webkit-scrollbar-thumb {
+      background: rgba(255,255,255,0.3);
+      border-radius: 3px;
+    }
+
+    .btn { transition: all 0.2s ease; }
+    .btn:hover { transform: translateY(-2px); box-shadow: 0 8px 16px rgba(0,0,0,0.2); }
+    .btn:active { transform: translateY(0px); }
+
+    .q-list-item {
+      padding: 12px;
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      margin-bottom: 10px;
+      font-size: 13px;
+      transition: all 0.2s ease;
+    }
+
+    .q-list-item:hover {
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+      border-color: #667eea;
+      transform: translateX(4px);
+    }
+
+    .preview-container {
+      height: 100%;
+      overflow-y: auto;
+      background: #f8f9fa;
+    }
+
+    .preview-container::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .preview-container::-webkit-scrollbar-track {
+      background: #f0f0f0;
+    }
+
+    .preview-container::-webkit-scrollbar-thumb {
+      background: #667eea;
+      border-radius: 4px;
+    }
+
+    .header-gradient {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    .card-modern {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      border: 1px solid rgba(102, 126, 234, 0.1);
+    }
+
+    .icon-box {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+
+    .section-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #667eea;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-secondary {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      color: white;
+    }
+
+    .btn-secondary:hover {
+      box-shadow: 0 8px 20px rgba(245, 87, 108, 0.4);
+    }
+
+    .btn-success {
+      background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+      color: white;
+    }
+
+    .btn-success:hover {
+      box-shadow: 0 8px 20px rgba(79, 172, 254, 0.4);
+    }
+
+    .no-print {
+      backdrop-filter: blur(10px);
+    }
+
+    .stat-badge {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .input-modern {
+      padding: 10px 14px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 13px;
+      font-family: 'Poppins', system-ui;
+      transition: all 0.2s ease;
+    }
+
+    .input-modern:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+  </style>
+</head>
+<body class="no-print">
+
+<div class="min-h-screen p-4">
+  <div class="max-w-7xl mx-auto">
+    
+    <!-- Main Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+
+      <!-- LEFT PANEL -->
+      <div class="card-modern p-6 h-fit">
+        <div class="left-panel space-y-5">
+          
+          <!-- Exam Info Section -->
+          <div>
+            <div class="section-title">
+              <i class="fas fa-book"></i> Exam Details
+            </div>
+            <div class="space-y-3">
+              <div>
+                <label class="text-xs font-semibold text-gray-700 block mb-2 flex items-center gap-2">
+                  <i class="fas fa-heading text-667eea"></i> Exam Name
+                </label>
+                <input id="examName" placeholder="e.g., Mathematics Final Exam" class="input-modern w-full" />
+              </div>
+
+              <div>
+                <label class="text-xs font-semibold text-gray-700 block mb-2 flex items-center gap-2">
+                  <i class="fas fa-calendar text-667eea"></i> Date
+                </label>
+                <input id="examDate" placeholder="e.g., 20-Oct-2024" class="input-modern w-full" />
+              </div>
+
+              <div>
+                <label class="text-xs font-semibold text-gray-700 block mb-2 flex items-center gap-2">
+                  <i class="fas fa-clock text-667eea"></i> Duration
+                </label>
+                <input id="examDuration" placeholder="e.g., 2 hours" class="input-modern w-full" />
+              </div>
+
+              <div>
+                <label class="text-xs font-semibold text-gray-700 block mb-2 flex items-center gap-2">
+                  <i class="fas fa-list-check text-667eea"></i> Instructions
+                </label>
+                <textarea id="examInstructions" rows="2" placeholder="Add any instructions..." class="input-modern w-full"></textarea>
+              </div>
+            </div>
+          </div>
+
+          <div class="border-t border-gray-200"></div>
+
+          <!-- Question Section -->
+          <div>
+            <div class="section-title">
+              <i class="fas fa-plus-circle"></i> Add Question
+            </div>
+            <div class="space-y-3">
+              <div>
+                <label class="text-xs font-semibold text-gray-700 block mb-2">Question Text</label>
+                <textarea id="qText" rows="3" placeholder="Enter your question here..." class="input-modern w-full"></textarea>
+              </div>
+              
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="text-xs font-semibold text-gray-700 block mb-1 flex items-center gap-1">
+                    <i class="fas fa-a text-red-500"></i> Option A
+                  </label>
+                  <input id="optA" placeholder="Option A" class="input-modern w-full text-sm" />
+                </div>
+                <div>
+                  <label class="text-xs font-semibold text-gray-700 block mb-1 flex items-center gap-1">
+                    <i class="fas fa-b text-blue-500"></i> Option B
+                  </label>
+                  <input id="optB" placeholder="Option B" class="input-modern w-full text-sm" />
+                </div>
+                <div>
+                  <label class="text-xs font-semibold text-gray-700 block mb-1 flex items-center gap-1">
+                    <i class="fas fa-c text-green-500"></i> Option C
+                  </label>
+                  <input id="optC" placeholder="Option C" class="input-modern w-full text-sm" />
+                </div>
+                <div>
+                  <label class="text-xs font-semibold text-gray-700 block mb-1 flex items-center gap-1">
+                    <i class="fas fa-d text-purple-500"></i> Option D
+                  </label>
+                  <input id="optD" placeholder="Option D" class="input-modern w-full text-sm" />
+                </div>
+              </div>
+
+              <div class="flex gap-2">
+                <button id="addBtn" class="btn btn-primary flex-1 px-3 py-2.5 rounded-lg hover:bg-indigo-700 text-sm font-semibold flex items-center justify-center gap-2">
+                  <i class="fas fa-plus"></i> Add
+                </button>
+                <button id="updateBtn" class="btn btn-secondary hidden flex-1 px-3 py-2.5 rounded-lg text-sm font-semibold flex items-center justify-center gap-2">
+                  <i class="fas fa-check"></i> Update
+                </button>
+              </div>
+
+              <button id="clearBtn" class="w-full px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 text-sm font-semibold flex items-center justify-center gap-2 transition-all">
+                <i class="fas fa-trash"></i> Clear All
+              </button>
+
+              <div class="bg-gradient-to-r from-667eea/10 to-764ba2/10 p-3 rounded-lg border border-667eea/20 text-center">
+                <div class="text-xs text-gray-600 mb-1">Questions Added</div>
+                <div class="stat-badge justify-center w-full text-center">
+                  <i class="fas fa-check-circle mr-2"></i><span id="count">0</span> / 100
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="border-t border-gray-200"></div>
+
+          <!-- Action Buttons -->
+          <div class="space-y-2">
+            <button id="generateBtn" class="btn btn-success w-full px-4 py-3 rounded-lg font-semibold text-sm flex items-center justify-center gap-2">
+              <i class="fas fa-file-export"></i> Generate PDF
+            </button>
+            <button id="downloadJsonBtn" class="btn btn-primary w-full px-4 py-2.5 rounded-lg font-semibold text-sm flex items-center justify-center gap-2">
+              <i class="fas fa-download"></i> Export JSON
+            </button>
+            <button id="importJsonBtn" class="btn w-full px-4 py-2.5 bg-slate-600 text-white rounded-lg hover:bg-slate-700 font-semibold text-sm flex items-center justify-center gap-2">
+              <i class="fas fa-upload"></i> Import JSON
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT PANEL -->
+      <div class="lg:col-span-2 space-y-4 flex flex-col">
+        
+        <!-- Questions Added Box -->
+        <div class="card-modern p-5 flex flex-col" style="flex: 0 0 220px;">
+          <div class="flex items-center justify-between mb-3">
+            <div class="section-title m-0">
+              <i class="fas fa-list"></i> Questions Added
+            </div>
+            <span class="stat-badge">
+              <i class="fas fa-clipboard-list mr-1"></i><span id="qCount">0</span>
+            </span>
+          </div>
+          <div id="qList" class="space-y-2 overflow-y-auto flex-1" style="max-height: 150px;"></div>
+          <div id="noQuestions" class="text-center text-gray-400 py-8 flex items-center justify-center h-20">
+            <div>
+              <i class="fas fa-inbox text-2xl mb-2 block"></i>
+              <div class="text-xs">No questions yet</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PDF Preview Box -->
+        <div class="card-modern p-5 flex flex-col flex-1 min-h-0">
+          <div class="section-title mb-3">
+            <i class="fas fa-eye"></i> PDF Preview
+          </div>
+          <div id="preview" class="preview-container border-2 border-dashed border-667eea/30 rounded-lg p-3" style="background-image: repeating-linear-gradient(90deg, #f0f0f0 0px, #f0f0f0 1px, transparent 1px, transparent 20px);"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Import Modal -->
+<div id="importModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur">
+  <div class="card-modern p-6 w-full max-w-2xl max-h-96 overflow-y-auto">
+    <div class="flex items-center gap-3 mb-4">
+      <div class="icon-box bg-667eea/10 text-667eea">
+        <i class="fas fa-file-import"></i>
+      </div>
+      <h3 class="text-lg font-semibold">Import JSON</h3>
+    </div>
+    <textarea id="importText" rows="8" placeholder="Paste your JSON here..." class="input-modern w-full mb-4" style="font-size: 12px; font-family: 'Courier New', monospace;"></textarea>
+    <div class="flex justify-end gap-2">
+      <button id="importCancel" class="px-4 py-2 border-2 border-gray-300 rounded-lg hover:bg-gray-50 font-semibold transition-all">Cancel</button>
+      <button id="importConfirm" class="px-4 py-2 btn-primary rounded-lg font-semibold flex items-center gap-2">
+        <i class="fas fa-check"></i> Import
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+  let questions = [];
+  let editIdx = -1;
+
+  const inputs = {
+    examName: document.getElementById('examName'),
+    examDate: document.getElementById('examDate'),
+    examDuration: document.getElementById('examDuration'),
+    examInstructions: document.getElementById('examInstructions'),
+    qText: document.getElementById('qText'),
+    optA: document.getElementById('optA'),
+    optB: document.getElementById('optB'),
+    optC: document.getElementById('optC'),
+    optD: document.getElementById('optD')
+  };
+
+  function escape(text) {
+    const div = document.createElement('div');
+    div.textContent = text || '';
+    return div.innerHTML;
+  }
+
+  function renderList() {
+    const list = document.getElementById('qList');
+    const noMsg = document.getElementById('noQuestions');
+    
+    list.innerHTML = '';
+    if (questions.length === 0) {
+      noMsg.style.display = 'flex';
+      return;
+    }
+    noMsg.style.display = 'none';
+
+    questions.forEach((q, i) => {
+      const item = document.createElement('div');
+      item.className = 'q-list-item';
+      item.innerHTML = `
+        <div class="flex justify-between items-start gap-2">
+          <div class="flex-1 min-w-0">
+            <div class="font-semibold text-gray-900 text-sm">${i + 1}. ${escape(q.question.substring(0, 40))}${q.question.length > 40 ? '...' : ''}</div>
+            <div class="text-xs text-gray-600 mt-1">A: ${escape(q.optA.substring(0, 25))}</div>
+          </div>
+          <div class="flex gap-1 flex-shrink-0">
+            <button class="edit px-2 py-1 text-xs bg-amber-500 text-white rounded hover:bg-amber-600 transition-all" title="Edit">
+              <i class="fas fa-edit"></i>
+            </button>
+            <button class="del px-2 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600 transition-all" title="Delete">
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
+        </div>
+      `;
+      item.querySelector('.edit').onclick = () => {
+        inputs.qText.value = q.question;
+        inputs.optA.value = q.optA;
+        inputs.optB.value = q.optB;
+        inputs.optC.value = q.optC;
+        inputs.optD.value = q.optD;
+        editIdx = i;
+        document.getElementById('addBtn').classList.add('hidden');
+        document.getElementById('updateBtn').classList.remove('hidden');
+        inputs.qText.focus();
+      };
+      item.querySelector('.del').onclick = () => {
+        if (confirm('Delete this question?')) {
+          questions.splice(i, 1);
+          renderAll();
+        }
+      };
+      list.appendChild(item);
+    });
+
+    document.getElementById('count').textContent = questions.length;
+    document.getElementById('qCount').textContent = questions.length;
+  }
+
+  function addQuestion() {
+    const q = inputs.qText.value.trim();
+    if (!q) {
+      alert('Please enter a question');
+      return;
+    }
+
+    const obj = {
+      question: q,
+      optA: inputs.optA.value.trim(),
+      optB: inputs.optB.value.trim(),
+      optC: inputs.optC.value.trim(),
+      optD: inputs.optD.value.trim()
+    };
+
+    if (editIdx >= 0) {
+      questions[editIdx] = obj;
+      editIdx = -1;
+      document.getElementById('addBtn').classList.remove('hidden');
+      document.getElementById('updateBtn').classList.add('hidden');
+    } else {
+      questions.push(obj);
+    }
+
+    inputs.qText.value = '';
+    inputs.optA.value = '';
+    inputs.optB.value = '';
+    inputs.optC.value = '';
+    inputs.optD.value = '';
+
+    renderAll();
+  }
+
+  function buildPdf() {
+    const QPER_COL = 12;
+    let html = '';
+    let qIdx = 0;
+    let pageNum = 1;
+
+    while (qIdx < questions.length) {
+      html += `<div class="pdf-page">
+        <div class="pdf-header">
+          <div class="exam-title">${escape(inputs.examName.value || 'Examination')}</div>
+          <div class="exam-info">
+            <strong>Date:</strong> ${escape(inputs.examDate.value || '__________')}<br/>
+            <strong>Duration:</strong> ${escape(inputs.examDuration.value || '__________')}
+          </div>
+          ${inputs.examInstructions.value ? `<div class="exam-instructions">${escape(inputs.examInstructions.value)}</div>` : ''}
+        </div>
+
+        <div class="pdf-content">
+          <div class="pdf-col">`;
+
+      for (let i = 0; i < QPER_COL && qIdx < questions.length; i++) {
+        const q = questions[qIdx];
+        html += `<div class="q-item">
+          <div class="q-title">${qIdx + 1}. ${escape(q.question)}</div>
+          <div class="q-opts">
+            ${q.optA ? `<div class="opt">A) ${escape(q.optA)}</div>` : ''}
+            ${q.optB ? `<div class="opt">B) ${escape(q.optB)}</div>` : ''}
+            ${q.optC ? `<div class="opt">C) ${escape(q.optC)}</div>` : ''}
+            ${q.optD ? `<div class="opt">D) ${escape(q.optD)}</div>` : ''}
+          </div>
+        </div>`;
+        qIdx++;
+      }
+
+      html += `</div><div class="pdf-col">`;
+
+      for (let i = 0; i < QPER_COL && qIdx < questions.length; i++) {
+        const q = questions[qIdx];
+        html += `<div class="q-item">
+          <div class="q-title">${qIdx + 1}. ${escape(q.question)}</div>
+          <div class="q-opts">
+            ${q.optA ? `<div class="opt">A) ${escape(q.optA)}</div>` : ''}
+            ${q.optB ? `<div class="opt">B) ${escape(q.optB)}</div>` : ''}
+            ${q.optC ? `<div class="opt">C) ${escape(q.optC)}</div>` : ''}
+            ${q.optD ? `<div class="opt">D) ${escape(q.optD)}</div>` : ''}
+          </div>
+        </div>`;
+        qIdx++;
+      }
+
+      html += `</div></div>
+        <div class="pdf-footer">Page ${pageNum} of ${Math.ceil(questions.length / (QPER_COL * 2))}</div>
+      </div>`;
+      
+      pageNum++;
+    }
+
+    return html;
+  }
+
+  function renderPreview() {
+    const pdf = buildPdf();
+    const match = pdf.match(/<div class="pdf-page">[\s\S]*?<\/div>\s*(?=<div class="pdf-page">|$)/);
+    document.getElementById('preview').innerHTML = match ? match[0] : pdf;
+  }
+
+  function renderAll() {
+    renderList();
+    renderPreview();
+  }
+
+  document.getElementById('addBtn').onclick = addQuestion;
+  document.getElementById('updateBtn').onclick = addQuestion;
+
+  document.getElementById('clearBtn').onclick = () => {
+    if (confirm('Clear all questions?')) {
+      questions = [];
+      renderAll();
+    }
+  };
+
+  document.getElementById('generateBtn').onclick = async () => {
+    if (questions.length === 0) {
+      alert('Add questions first');
+      return;
+    }
+
+    const pdf = buildPdf();
+    const wrapper = document.createElement('div');
+    wrapper.innerHTML = `<div class="pdf-wrapper">${pdf}</div>`;
+    wrapper.style.width = '210mm';
+
+    const opt = {
+      margin: 0,
+      filename: `${(inputs.examName.value || 'exam').replace(/\s+/g, '_')}.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff' },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+      pagebreak: { mode: 'avoid-all' }
+    };
+
+    try {
+      document.getElementById('generateBtn').disabled = true;
+      document.getElementById('generateBtn').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
+      await html2pdf().set(opt).from(wrapper).save();
+    } catch (e) {
+      console.error(e);
+      alert('PDF generation failed');
+    } finally {
+      document.getElementById('generateBtn').disabled = false;
+      document.getElementById('generateBtn').innerHTML = '<i class="fas fa-file-export"></i> Generate PDF';
+    }
+  };
+
+  document.getElementById('downloadJsonBtn').onclick = () => {
+    const data = {
+      exam: {
+        name: inputs.examName.value,
+        date: inputs.examDate.value,
+        duration: inputs.examDuration.value,
+        instructions: inputs.examInstructions.value
+      },
+      questions,
+      count: questions.length
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${(inputs.examName.value || 'exam').replace(/\s+/g, '_')}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  document.getElementById('importJsonBtn').onclick = () => {
+    document.getElementById('importModal').classList.remove('hidden');
+  };
+
+  document.getElementById('importCancel').onclick = () => {
+    document.getElementById('importModal').classList.add('hidden');
+  };
+
+  document.getElementById('importConfirm').onclick = () => {
+    try {
+      const data = JSON.parse(document.getElementById('importText').value);
+      const qList = Array.isArray(data) ? data : (data.questions || []);
+      questions = qList.map(q => ({
+        question: String(q.question || ''),
+        optA: String(q.optA || ''),
+        optB: String(q.optB || ''),
+        optC: String(q.optC || ''),
+        optD: String(q.optD || '')
+      }));
+      if (data.exam) {
+        inputs.examName.value = data.exam.name || '';
+        inputs.examDate.value = data.exam.date || '';
+        inputs.examDuration.value = data.exam.duration || '';
+        inputs.examInstructions.value = data.exam.instructions || '';
+      }
+      document.getElementById('importModal').classList.add('hidden');
+      document.getElementById('importText').value = '';
+      renderAll();
+      alert(`Imported ${questions.length} questions`);
+    } catch (e) {
+      alert('Invalid JSON format');
+    }
+  };
+
+  // Keyboard shortcuts
+  document.addEventListener('keydown', (e) => {
+    if (e.ctrlKey && e.key === 's') {
+      e.preventDefault();
+      document.getElementById('generateBtn').click();
+    }
+  });
+
+  renderAll();
+</script>
+
+</body>
+</html>
